@@ -15,7 +15,8 @@ def process_word(word):
         word = word[:-1]
     # some words have suffix indicators.. खाप्–नु
     if hyphen in word:
-        word = word.replace(hyphen, "")
+        # word = word.replace(hyphen, "")
+        word = word[:word.find(hyphen)]
 
     # some root have aliases, i.e. खान्की/खान्गी, give two independent words
     if slash in word:
@@ -23,11 +24,23 @@ def process_word(word):
     return [word]
 
 
-def extract_words(filename):
+def extract_words_from_brihat(filename):
     with open(filename, "r") as root_file:
-        words = root_file.read().decode("utf-8").split("\n")
+        words = root_file.read().decode("utf-8").splitlines()
         words_list = map(process_word, words)
+        return list(set([w for words in words_list for w in words]))
 
+def extract_words_from_contemporary(filename):
+    with open(filename, "r") as root_file:
+        words = root_file.read().decode("utf-8").splitlines()
+        words_list = map(lambda line: line.partition("|")[0], words)
+        return words_list
 
 if __name__ == "__main__":
-    pass
+    words = extract_words_from_brihat("../files/shabdakosh-words.txt")
+    words_2 = extract_words_from_contemporary("../files/root")
+    print len(words_2)
+    print len(set(words).intersection(set(words_2)))
+    print len(set(words) - set(words_2))
+
+    # print "\n".join(words[:20])

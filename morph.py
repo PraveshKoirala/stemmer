@@ -31,15 +31,44 @@ class Morph:
             self.suffix_rules[suffix] = rule
 
     def read_suffix_rule(self):
+        """
+        The suffix rule is of the following form
+        RN  SFX(X)  sub-rules   morph   morph-tag   ignore
+
+        RN: The rule number
+        SFX(X): The type of the rule, either SFX or SFXX, not sure what they do yet
+        sub-rules: The number of sub-rules, determines the number of following lines
+        morph:  The actual suffix e.g. आइ, एको etc
+        morph-tag:  The english tag of morph i.e. AAI, EKO etc
+        ignore: Whether to ignore in second parse, not sure what they do yet.
+        :return:
+        """
         tokens = open(self.suffix_rule_file_name, "r").decode("utf-8").split("\n")
-        for rules, suffix in zip(tokens[::2], tokens[1::2]):
-            num, type, subrule, morph, desc, ignore = rules.split(" ")
-            # num is the rule number
-            self.suffix_rules[num] = dict(type=type, subrule=subrule, morph=morph, desc=desc, ignore=ignore)
-            if type == "SFX":
-                pass
-            else:
-                pass
+        # Remove all empty lines.
+        tokens = filter(None, tokens)
+        while tokens:
+            rule = tokens.pop(0)
+            num, type, subrule, morph, tag, ignore = rule.split(" ")
+            num, subrule = int(num), int(subrule)
+            self.suffix_rules[num] = dict(type=type, subrule=subrule, morph=morph, tag=tag, ignore=ignore,
+                                          strip_rule=[])
+            strip_rule = []
+            # now the sub-rules
+            for i in range(subrule):
+                line = tokens.pop(0)
+                # regular suffix
+                if type == "SFX":
+                    delete, insert = line.split(" ")
+                    strip_rule.append(dict(insert=insert.replace(".", ""), delete=delete))
+                # irregular suffix
+                elif type == "SFXX":
+                    # todo irregular suffix here
+                    pass
+
+            # sort the strip rule according to the length of what to delete
+            if "delete" in strip_rule[0]:
+                sorted(strip_rule, key=lambda sub_rule: len(sub_rule["delete"]))
+            self.suffix_rules[num].strip_rule=strip_rule
 
     def __init__(self, root_file_name, suffix_file_name, suffix_rule_file_name):
         """
